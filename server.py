@@ -165,15 +165,23 @@ async def call_tool_api(request: Request):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 if __name__ == "__main__":
-    import uvicorn
-    # Get the Starlette app from FastMCP
-    app = mcp.http_app()
-    
-    # Add our dashboard routes directly to it
-    app.add_route("/", serve_index, methods=["GET"])
-    app.add_route("/index.html", serve_index, methods=["GET"])
-    app.add_route("/api/tools", list_tools_api, methods=["GET"])
-    app.add_route("/api/resource", get_resource_api, methods=["GET"])
-    app.add_route("/api/call/{name}", call_tool_api, methods=["POST"])
+    import sys
+    # If 'http' is passed as an argument, run as HTTP/SSE server (for local dashboard/inspector)
+    # Otherwise, run as STDIO server (default for platforms like Prefect Horizon)
+    if len(sys.argv) > 1 and sys.argv[1] == "http":
+        import uvicorn
+        # Get the Starlette app from FastMCP
+        app = mcp.http_app()
+        
+        # Add our dashboard routes directly to it
+        app.add_route("/", serve_index, methods=["GET"])
+        app.add_route("/index.html", serve_index, methods=["GET"])
+        app.add_route("/api/tools", list_tools_api, methods=["GET"])
+        app.add_route("/api/resource", get_resource_api, methods=["GET"])
+        app.add_route("/api/call/{name}", call_tool_api, methods=["POST"])
 
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+        print("🚀 Starting MCP Server in HTTP mode on http://localhost:8001")
+        uvicorn.run(app, host="0.0.0.0", port=8001)
+    else:
+        # Default to STDIO transport
+        mcp.run()

@@ -35,7 +35,7 @@
               fuser -k 6277/tcp 2>/dev/null || true
               
               echo "🚀 Starting MCP Server on http://localhost:8001..."
-              python server.py &
+              python server.py http &
               SERVER_PID=$!
               
               sleep 2
