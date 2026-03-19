@@ -1,0 +1,17 @@
+warning: Git tree '/home/martinb/Projekte/Quasiris/MCP' is dirty
+
+╔══════════════════════════════════════════════╗
+║   MCP Server Development Shell               ║
+╠══════════════════════════════════════════════╣
+║  Standard MCP-UI (MCP Apps) Ready            ║
+╚══════════════════════════════════════════════╝
+
+/nix/store/dj8snym8a2fs4k4xqaj097a1p1xby2k1-python3.13-websockets-16.0/lib/python3.13/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+  warnings.warn(  # deprecated in 14.0 - 2024-11-09
+/nix/store/17a5pqvg26g4vv6wbx9zm6kflb90m5zl-python3.13-uvicorn-0.40.0/lib/python3.13/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+  from websockets.server import WebSocketServerProtocol
+INFO:     Started server process [83608]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:38280 - "GET /api/tools HTTP/1.1" 200 OK

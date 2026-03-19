@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Premium Dashboard</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --accent: #f43f5e;
+        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
+        .tool-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .tool-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: all 0.2s; border: 1px solid transparent; }
+        .tool-item:hover { background: #f1f5f9; }
+        .tool-item.active { background: #eef2ff; color: var(--primary); border-color: #c7d2fe; font-weight: 500; }
+        .tool-item .tool-desc { font-size: 0.75rem; color: var(--text-light); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; background: #fdfdff; }
+        .main-header { padding: 20px 40px; background: #fff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .main-header h2 { margin: 0; font-size: 1.1rem; }
+        .content-area { flex: 1; overflow-y: auto; padding: 40px; }
+        
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-outline:hover { background: var(--primary); color: white; }
+
+        /* Form & Cards */
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; }
+        .card-header { padding: 16px 24px; border-bottom: 1px solid var(--border); background: #fafafa; font-weight: 600; }
+        .card-body { padding: 24px; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        input, textarea, select { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        
+        button.btn-primary { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; }
+        button.btn-primary:hover { background: var(--primary-hover); }
+
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .tab { padding: 12px 20px; cursor: pointer; color: var(--text-light); border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+        /* Result rendering */
+        pre { background: #1e293b; color: #f1f5f9; padding: 20px; border-radius: 8px; font-size: 13px; line-height: 1.5; overflow-x: auto; margin: 0; }
+        .ui-view-container { border: 1px solid var(--border); border-radius: 8px; padding: 0; background: #fff; min-height: 200px; }
+        .loading { color: var(--text-light); font-style: italic; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar { width: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MCP Dashboard</h1>
+        </div>
+        <div class="tool-list" id="tool-list">
+            <div class="loading">Loading tools...</div>
+        </div>
+    </div>
+    
+    <div class="main">
+        <div class="main-header" id="main-header">
+            <h2 id="current-tool-title">Select a Tool</h2>
+            <div id="header-actions" style="display: none;">
+                <button class="btn-outline" onclick="openInspector()">Inspect in MCP Inspector ↗</button>
+            </div>
+        </div>
+        
+        <div class="content-area" id="content-area" style="display: none;">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('execute')">Execute</div>
+                <div class="tab" id="ui-tab" style="display: none;" onclick="switchTab('ui')">UI View</div>
+                <div class="tab" onclick="switchTab('insights')">Insights</div>
+            </div>
+
+            <div id="tab-execute" class="tab-content">
+                <div class="card">
+                    <div class="card-header">Attributes</div>
+                    <div class="card-body">
+                        <form id="tool-form">
+                            <div id="form-fields"></div>
+                            <button type="submit" class="btn-primary">Execute Tool</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card" id="result-card" style="display: none;">
+                    <div class="card-header">Result</div>
+                    <div class="card-body">
+                        <pre id="result-display"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-ui" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header" id="ui-resource-title">UI Resource</div>
+                    <div class="card-body ui-view-container" id="ui-container">
+                        <div class="loading">No UI rendered yet. Execute the tool to see results here if compatible.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-insights" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header">Tool Specification</div>
+                    <div class="card-body">
+                        <pre id="insights-display"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tools = [];
+        let selectedTool = null;
+
+        async function init() {
+            try {
+                const res = await fetch('/api/tools');
+                tools = await res.json();
+                const list = document.getElementById('tool-list');
+                list.innerHTML = '';
+                tools.forEach(tool => {
+                    const div = document.createElement('div');
+                    div.className = 'tool-item';
+                    div.innerHTML = `
+                        <div style="font-weight: 600;">${tool.name}</div>
+                        <div class="tool-desc">${tool.description || 'No description'}</div>
+                    `;
+                    div.onclick = () => selectTool(tool, div);
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                document.getElementById('tool-list').innerHTML = `<div style="color:red">Error: ${err.message}</div>`;
+            }
+        }
+
+        function selectTool(tool, element) {
+            selectedTool = tool;
+            document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.getElementById('content-area').style.display = 'block';
+            document.getElementById('header-actions').style.display = 'block';
+            document.getElementById('current-tool-title').textContent = tool.name;
+            
+            // Setup fields
+            const fields = document.getElementById('form-fields');
+            fields.innerHTML = '';
+            const props = tool.parameters.properties || {};
+            const required = tool.parameters.required || [];
+
+            if (Object.keys(props).length === 0) {
+                fields.innerHTML = '<div style="color:var(--text-light); margin-bottom:20px;">This tool takes no arguments.</div>';
+            }
+
+            for (const [name, schema] of Object.entries(props)) {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                
+                const isRequired = required.includes(name);
+                const labelText = isRequired ? `${name} *` : name;
+                
+                group.innerHTML = `<label>${labelText} ${schema.description ? `<span style="display:block; font-weight:normal; color:var(--text-light); font-size:11px; margin-top:2px;">${schema.description}</span>` : ''}</label>`;
+                
+                let input;
+                if (schema.enum) {
+                    input = document.createElement('select');
+                    schema.enum.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        input.appendChild(option);
+                    });
+                } else if (schema.type === 'string') {
+                    input = document.createElement('textarea');
+                    input.rows = 2;
+                } else if (schema.type === 'boolean') {
+                    input = document.createElement('select');
+                    const t = document.createElement('option'); t.value = 'true'; t.textContent = 'True';
+                    const f = document.createElement('option'); f.value = 'false'; f.textContent = 'False';
+                    input.appendChild(t); input.appendChild(f);
+                } else if (schema.type === 'object' || schema.type === 'array') {
+                    input = document.createElement('textarea');
+                    input.placeholder = 'Enter JSON...';
+                    input.rows = 4;
+                } else {
+                    input = document.createElement('input');
+                    input.type = (schema.type === 'number' || schema.type === 'integer') ? 'number' : 'text';
+                }
+                
+                input.name = name;
+                input.required = isRequired;
+                group.appendChild(input);
+                fields.appendChild(group);
+            }
+
+            // Setup UI Tab visibility
+            const resourceUri = tool.meta && tool.meta.ui && tool.meta.ui.resourceUri;
+            document.getElementById('ui-tab').style.display = resourceUri ? 'block' : 'none';
+            document.getElementById('ui-resource-title').textContent = resourceUri || 'UI View';
+            
+            // Clear results
+            document.getElementById('result-card').style.display = 'none';
+            document.getElementById('ui-container').innerHTML = '<div class="loading">Execute the tool to see UI results.</div>';
+            
+            // Insights
+            document.getElementById('insights-display').textContent = JSON.stringify(tool, null, 2);
+            
+            switchTab('execute');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            
+            document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+        }
+
+        document.getElementById('tool-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const args = {};
+            formData.forEach((v, k) => {
+                const schema = selectedTool.parameters.properties[k];
+                if (schema.type === 'number' || schema.type === 'integer') {
+                    args[k] = Number(v);
+                } else if (schema.type === 'boolean') {
+                    args[k] = v === 'true';
+                } else if (schema.type === 'object' || schema.type === 'array') {
+                    try { args[k] = JSON.parse(v); } catch(e) { args[k] = v; }
+                } else {
+                    args[k] = v;
+                }
+            });
+            
+            const display = document.getElementById('result-display');
+            display.textContent = 'Executing...';
+            document.getElementById('result-card').style.display = 'block';
+            
+            try {
+                const res = await fetch(`/api/call/${selectedTool.name}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(args)
+                });
+                const data = await res.json();
+                display.textContent = data.error ? `Error: ${data.error}` : JSON.stringify(data.result, null, 2);
+
+                // Try to render UI if compatible
+                const resourceUri = selectedTool.meta && selectedTool.meta.ui && selectedTool.meta.ui.resourceUri;
+                if (resourceUri) {
+                    renderUI(resourceUri, data.result);
+                }
+            } catch (err) {
+                display.textContent = `Fetch Error: ${err.message}`;
+            }
+        };
+
+        async function renderUI(uri, resultData) {
+            const container = document.getElementById('ui-container');
+            container.innerHTML = '<div class="loading">Loading UI Template...</div>';
+            
+            try {
+                const res = await fetch(`/api/resource?uri=${encodeURIComponent(uri)}`);
+                const data = await res.json();
+                if (data.resource && data.resource.content && data.resource.content[0]) {
+                    let html = data.resource.content[0].htmlString || data.resource.content[0].text;
+                    // Basic template replacement if needed
+                    // (Note: std mcp-ui usually handles injection via JS, but we'll doing simple replacement here)
+                    if (resultData) {
+                        // Very simple hack: find a container and inject JSON if no logic
+                        const shadow = `
+                            <div id="ui-root">${html}</div>
+                            <script>
+                                // We could inject data here if we had a specific protocol
+                                console.log("Result Data Available:", ${JSON.stringify(resultData)});
+                            <\/script>
+                        `;
+                        container.innerHTML = html;
+                        // If it's the search UI, let's inject a "results" list manually since we're "not fancy"
+                        if (uri.includes('products/search') && resultData && resultData.results) {
+                            const resultsDiv = container.querySelector('#results');
+                            if (resultsDiv) {
+                                let listHtml = '<ul style="list-style:none; padding:0">';
+                                resultData.results.forEach(p => {
+                                    listHtml += `<li style="padding:10px; border-bottom:1px solid #334155;">
+                                        <div style="font-weight:bold; color:#818cf8">${p.name}</div>
+                                        <div style="font-size:0.8rem; color:#94a3b8">${p.description || ''}</div>
+                                    </li>`;
+                                });
+                                listHtml += '</ul>';
+                                resultsDiv.innerHTML = listHtml;
+                            }
+                        }
+                    }
+                } else {
+                    container.innerHTML = '<div style="color:red">Failed to load UI resource template.</div>';
+                }
+            } catch (err) {
+                container.innerHTML = `<div style="color:red">UI Rendering Error: ${err.message}</div>`;
+            }
+        }
+
+        function openInspector() {
+            // The default port for the inspector UI is 6274
+            window.open('http://localhost:6274', '_blank');
+        }
+
+        init();
+    </script>
+</body>
+</html>
